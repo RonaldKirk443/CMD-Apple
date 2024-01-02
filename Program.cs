@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Drawing;
 using System.Runtime.CompilerServices;
+using FFmpeg.NET;
 
 namespace CMD_Apple
 {
@@ -21,16 +22,30 @@ namespace CMD_Apple
             //    'v', 'c', 'z', 'X', 'Y', 'J', 'C', 'Q', '0', 'O', 'Z', 'm', 'q', 'd', 
             //    'b', 'h', 'a', 'o', '*', '#', 'M', 'W', '8', 'B', '@', '$'};
 
-            char[] shader = {' ', '.', '\'', 'I', '!', '-', '|', 'X', 'Y', '0', 'O', 'Z', 'h', 'o', '#', 'M', 'W', '8', 'B', '@', '$'};
+            char[] shader = { ' ', '.', '\'', 'I', '!', '-', '|', 'X', 'Y', '0', 'O', 'Z', 'h', 'o', '#', 'M', 'W', '8', 'B', '@', '$' };
 
-            setWindowSize("");
-            char[][] arr = vidToFrames("", shader);
-            playAscii(arr, getFps(""));
+            //var vidFile = new MediaFile { Filename = @"G:\BadApple\BadApple.mp4" };
+            //var ffmpegFilePath = @"C:\ffmpeg\bin\ffmpeg.exe";
+            //var service = MediaToolkitService.CreateInstance(ffmpegFilePath);
+            //using (var engine = new Engine())
+            //{
+            //    engine.GetMetadata(vidFile);
+            //    Console.WriteLine(vidFile.Metadata.VideoData.Fps);
+            //}
+            //Thread.Sleep(5000);
+
+            InputFile vidFile = new InputFile(@"G:\BadApple\BadApple.mp4");
+            Engine ffmpeg = new Engine(@"C:\ffmpeg\bin\ffmpeg.exe");
+            MetaData metadata = ffmpeg.GetMetaDataAsync(vidFile, new CancellationToken()).Result;
+
+            setWindowSize(metadata);
+            char[][] arr = vidToFrames(vidFile, ffmpeg, shader);
+            playAscii(arr, getFps(metadata));
         }
 
-        public static void setWindowSize(string vidPath) {
-            int width = 480;  // GET FROM VID
-            int height = 360; // GET FROM VID
+        public static void setWindowSize(MetaData metadata) {
+            int width = int.Parse(metadata.VideoData.FrameSize.Split('x')[0]);
+            int height = int.Parse(metadata.VideoData.FrameSize.Split('x')[1]);
             asciiWidth = 37 * (width * 3 / height) * 2;
             asciiHeight = 111;
 
@@ -38,11 +53,11 @@ namespace CMD_Apple
             Console.SetBufferSize(asciiWidth + 8, asciiHeight + 8);
         }
 
-        public static float getFps(string vidPath) {
-            return 30f; // GET FROM VID
+        public static double getFps(MetaData metadata) {
+            return metadata.VideoData.Fps;
         }
 
-        public static char[][] vidToFrames(string vidPath, char[] shader) {
+        public static char[][] vidToFrames(InputFile vidFile, Engine ffmpeg, char[] shader) {
             // TODO: Set Font Size to 16 (or whatever the default is)
 
             int frameCount = 6573; // GET FROM VID
@@ -67,7 +82,7 @@ namespace CMD_Apple
             return arr;
         }
 
-        public static void playAscii(char[][] frames, float fps) {
+        public static void playAscii(char[][] frames, double fps) {
             // TODO: Set Font Size to 8
 
             var watch = System.Diagnostics.Stopwatch.StartNew();
@@ -77,7 +92,7 @@ namespace CMD_Apple
                 Console.Out.WriteAsync(frames[i]);
                 if (watch.Elapsed.TotalMilliseconds < (1 / fps) * 1000 * i)
                 {
-                    Thread.Sleep((int)MathF.Round(((1 / fps) * 1000 * i) - (int)watch.Elapsed.TotalMilliseconds));
+                    Thread.Sleep((int)Math.Round(((1 / fps) * 1000 * i) - (int)watch.Elapsed.TotalMilliseconds));
                 }
             }
         }
