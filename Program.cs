@@ -1,11 +1,8 @@
 ﻿using FFMpegCore;
 using FFMpegCore.Enums;
-using FFMpegCore.Pipes;
 using System.Diagnostics;
 using System.Drawing;
-using System.Runtime;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
+using WMPLib;
 
 namespace CMD_Apple
 {
@@ -39,11 +36,21 @@ namespace CMD_Apple
 
             setPlayBackSize(vidInfo);
             char[][] arr = vidToFrames(vidPath, vidInfo, shaderMin);
+            exportAudio(vidPath);
             setWindowSize(asciiWidth, asciiHeight);
             playAscii(arr, getFps(vidInfo));
 
+            FontChanger.setFontSize(16);
+            Console.Clear();
             Console.WriteLine("Press any key to exit");
             Console.ReadKey();
+        }
+
+        public static void exportAudio(string vidPath) {
+            Console.WriteLine("Exporting Audio ...");
+            IMediaAnalysis vidInfo = FFProbe.Analyse(vidPath);
+            FFMpeg.ExtractAudio(vidPath, @"res\audio.mp3");
+            Console.Clear();
         }
 
         public static void setPlayBackSize(IMediaAnalysis vidInfo) {
@@ -101,6 +108,11 @@ namespace CMD_Apple
         }
 
         public static void playAscii(char[][] frames, double fps) {
+
+            WindowsMediaPlayer myplayer = new WindowsMediaPlayer();
+            myplayer.settings.volume = 30;
+            myplayer.URL = @"res\audio.mp3";
+            myplayer.controls.play();
 
             var watch = Stopwatch.StartNew();
             for (int i = 0; i < frames.Length; i++)
