@@ -1,9 +1,11 @@
 ﻿using FFMpegCore;
+using FFMpegCore.Enums;
 using FFMpegCore.Pipes;
 using System.Diagnostics;
 using System.Drawing;
 using System.Runtime;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace CMD_Apple
 {
@@ -13,37 +15,51 @@ namespace CMD_Apple
         private static int asciiHeight = 0;
         static void Main(string[] args)
         {
-            //char[] shader = {' ', '.', '\'', '`', '^', '"', ',', ':', ';', 'I', 'l', '!', 'i', '>', '<', 
-            //    '~', '+', '_', '-', '?', ']', '[', '}', '{', '1', ')', '(', '|', '\\', '/', 't', 'f', 
-            //    'j', 'r', 'x', 'n', 'u', 'v', 'c', 'z', 'X', 'Y', 'U', 'J', 'C', 'L', 'Q', '0', 'O', 
-            //    'Z', 'm', 'w', 'q', 'p', 'd', 'b', 'k', 'h', 'a', 'o', '*', '#', 'M', 'W', '&', '8', 
-            //    '%', 'B', '@', '$'};
+            char[] shaderMax = {' ', '.', '\'', '`', '^', '"', ',', ':', ';', 'I', 'l', '!', 'i', '>', '<',
+                '~', '+', '_', '-', '?', ']', '[', '}', '{', '1', ')', '(', '|', '\\', '/', 't', 'f',
+                'j', 'r', 'x', 'n', 'u', 'v', 'c', 'z', 'X', 'Y', 'U', 'J', 'C', 'L', 'Q', '0', 'O',
+                'Z', 'm', 'w', 'q', 'p', 'd', 'b', 'k', 'h', 'a', 'o', '*', '#', 'M', 'W', '&', '8',
+                '%', 'B', '@', '$'};
 
-            //char[] shader = {' ', '.', '\'', '`', '^', '"', ',', ':', ';', 'I', 'l', '!',
-            //    '+', '_', '-', '1', '|', '\\', '/', 't', 'f', 'j', 'r', 'x', 'n', 'u', 
-            //    'v', 'c', 'z', 'X', 'Y', 'J', 'C', 'Q', '0', 'O', 'Z', 'm', 'q', 'd', 
-            //    'b', 'h', 'a', 'o', '*', '#', 'M', 'W', '8', 'B', '@', '$'};
+            char[] shaderMid = {' ', '.', '\'', '`', '^', '"', ',', ':', ';', 'I', 'l', '!',
+                '+', '_', '-', '1', '|', '\\', '/', 't', 'f', 'j', 'r', 'x', 'n', 'u',
+                'v', 'c', 'z', 'X', 'Y', 'J', 'C', 'Q', '0', 'O', 'Z', 'm', 'q', 'd',
+                'b', 'h', 'a', 'o', '*', '#', 'M', 'W', '8', 'B', '@', '$'};
 
-            char[] shader = {' ', '.', '\'', 'I', '!', '-', '|', 'X', 'Y', '0', 'O', 'Z', 'h', 'o', '#', 'M', 'W', '8', 'B', '@', '$'};
+            GlobalFFOptions.Configure(options => options.BinaryFolder = @"ffmpeg\bin");
 
-            String vidPath = @"G:\BadApple\BadApple.mp4";
+            char[] shaderSmall = {' ', '.', '\'', 'I', '!', '-', '|', 'X', 'Y', '0', 'O', 'Z', 'h', 'o', '#', 'M', 'W', '8', 'B', '@', '$'};
+
+            char[] shaderMin = {' ', '.', '\'', 'X', 'Y', '0', 'M', '@', '$'};
+
+            FontChanger.setFontSize(16);
+            string vidPath = "input.mp4";
+
             IMediaAnalysis vidInfo = FFProbe.Analyse(vidPath);
 
-            setWindowSize(vidInfo);
-            char[][] arr = vidToFrames(vidPath, vidInfo, shader);
+            setPlayBackSize(vidInfo);
+            char[][] arr = vidToFrames(vidPath, vidInfo, shaderMin);
+            setWindowSize(asciiWidth, asciiHeight);
             playAscii(arr, getFps(vidInfo));
+
+            Console.WriteLine("Press any key to exit");
+            Console.ReadKey();
         }
 
-        public static void setWindowSize(IMediaAnalysis vidInfo) {
+        public static void setPlayBackSize(IMediaAnalysis vidInfo) {
             if (vidInfo.PrimaryVideoStream == null) throw new Exception("Primary video stream is null");
 
             int width = vidInfo.PrimaryVideoStream.Width;
             int height = vidInfo.PrimaryVideoStream.Height;
-            asciiWidth = 37 * (width * 3 / height) * 2;
+            asciiWidth = (int)MathF.Round(width * 111f / height * (8f/5f));
             asciiHeight = 111;
+        }
 
-            Console.SetWindowSize(asciiWidth + 8, asciiHeight + 4);
-            Console.SetBufferSize(asciiWidth + 8, asciiHeight + 8);
+        public static void setWindowSize(int width, int height) {
+            FontChanger.setFontSize(8);
+
+            Console.SetWindowSize(width + 8, height + 4);
+            Console.SetBufferSize(width + 8, height + 8);
         }
 
         public static double getFps(IMediaAnalysis vidInfo) {
@@ -54,17 +70,19 @@ namespace CMD_Apple
 
         public static char[][] vidToFrames(string vidPath, IMediaAnalysis vidInfo, char[] shader)
         {
-            // TODO: Set Font Size to 16 (or whatever the default is)
-
             if (vidInfo.PrimaryVideoStream == null) throw new Exception("Primary video stream is null");
-            int frameCount = (int)Math.Floor(vidInfo.Duration.TotalMilliseconds / 1000 * vidInfo.PrimaryVideoStream.FrameRate) - 1;
-            //frameCount = 1000;
 
+            Console.WriteLine("Exporting Frames ...");
+            if (Directory.Exists(@"res")) Directory.Delete(@"res", true);
+            Directory.CreateDirectory(@"res");
+            FFMpegArguments.FromFileInput(vidPath).OutputToFile(@"res\%d.png", true, Options => { Options.WithVideoCodec(VideoCodec.Png); }).ProcessSynchronously();
+            Console.Clear();
+
+            int frameCount = Directory.GetFiles(@"res\").Length;
             char[][] arr = new char[frameCount][];
             for (int i = 0; i < frameCount; i++)
             {
-                Bitmap img = Snapshot(vidPath, new Size(asciiWidth, asciiHeight), TimeSpan.FromMilliseconds(i * (1000 / vidInfo.PrimaryVideoStream.FrameRate)));
-                //Bitmap img = new Bitmap("F:\\Projects\\CMD_Apple\\res\\frame-" + (i + 1) + ".png"); // GET FROM VID
+                Bitmap img = new Bitmap(@"res\" + (i+1) + ".png");
                 img = new Bitmap(img, new Size(asciiWidth, asciiHeight));
                 arr[i] = new char[(asciiWidth + 1) * asciiHeight];
                 for (int y = 0; y < asciiHeight; y++)
@@ -83,9 +101,8 @@ namespace CMD_Apple
         }
 
         public static void playAscii(char[][] frames, double fps) {
-            // TODO: Set Font Size to 8
 
-            var watch = System.Diagnostics.Stopwatch.StartNew();
+            var watch = Stopwatch.StartNew();
             for (int i = 0; i < frames.Length; i++)
             {
                 Console.SetCursorPosition(0, 0);
@@ -95,22 +112,6 @@ namespace CMD_Apple
                     Thread.Sleep((int)Math.Round(((1 / fps) * 1000 * i) - (int)watch.Elapsed.TotalMilliseconds));
                 }
             }
-        }
-
-        public static Bitmap Snapshot(string input, Size? size = null, TimeSpan? captureTime = null, int? streamIndex = null, int inputFileIndex = 0)
-        {
-            var source = FFProbe.Analyse(input);
-            var (arguments, outputOptions) = SnapshotArgumentBuilder.BuildSnapshotArguments(input, source, size, captureTime, streamIndex, inputFileIndex);
-            using var ms = new MemoryStream();
-
-            arguments
-                .OutputToPipe(new StreamPipeSink(ms), options => outputOptions(options
-                    .ForceFormat("rawvideo")))
-                .ProcessSynchronously();
-
-            ms.Position = 0;
-            using var bitmap = new Bitmap(ms);
-            return bitmap.Clone(new Rectangle(0, 0, bitmap.Width, bitmap.Height), bitmap.PixelFormat);
         }
 
     }
