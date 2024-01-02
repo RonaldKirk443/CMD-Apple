@@ -35,10 +35,24 @@ namespace CMD_Apple
             IMediaAnalysis vidInfo = FFProbe.Analyse(vidPath);
 
             setPlayBackSize(vidInfo);
-            char[][] arr = vidToFrames(vidPath, vidInfo, shaderMin);
-            exportAudio(vidPath);
-            setWindowSize(asciiWidth, asciiHeight);
-            playAscii(arr, getFps(vidInfo));
+
+            if (getFps(vidInfo) > 30)
+            {
+                Console.WriteLine("Since the video is over 30 fps, the frames will be pre-rendered");
+                Console.WriteLine("Thank you for your patience");
+                Thread.Sleep(5000);
+                vidToFrames(vidPath, vidInfo);
+                char[][] arr = framesToCharArr(shaderMin);
+                exportAudio(vidPath);
+                setWindowSize(asciiWidth, asciiHeight);
+                playAscii(arr, getFps(vidInfo));
+            }
+            else {
+                vidToFrames(vidPath, vidInfo);
+                exportAudio(vidPath);
+                setWindowSize(asciiWidth, asciiHeight);
+                renderAndPlayAscii(getFps(vidInfo), shaderMin);
+            }
 
             FontChanger.setFontSize(16);
             Console.Clear();
@@ -48,7 +62,6 @@ namespace CMD_Apple
 
         public static void exportAudio(string vidPath) {
             Console.WriteLine("Exporting Audio ...");
-            IMediaAnalysis vidInfo = FFProbe.Analyse(vidPath);
             FFMpeg.ExtractAudio(vidPath, @"res\audio.mp3");
             Console.Clear();
         }
@@ -75,7 +88,7 @@ namespace CMD_Apple
             return vidInfo.PrimaryVideoStream.FrameRate;
         }
 
-        public static char[][] vidToFrames(string vidPath, IMediaAnalysis vidInfo, char[] shader)
+        public static void vidToFrames(string vidPath, IMediaAnalysis vidInfo)
         {
             if (vidInfo.PrimaryVideoStream == null) throw new Exception("Primary video stream is null");
 
@@ -84,12 +97,14 @@ namespace CMD_Apple
             Directory.CreateDirectory(@"res");
             FFMpegArguments.FromFileInput(vidPath).OutputToFile(@"res\%d.png", true, Options => { Options.WithVideoCodec(VideoCodec.Png); }).ProcessSynchronously();
             Console.Clear();
+        }
 
+        public static char[][] framesToCharArr(char[] shader) {
             int frameCount = Directory.GetFiles(@"res\").Length;
             char[][] arr = new char[frameCount][];
             for (int i = 0; i < frameCount; i++)
             {
-                Bitmap img = new Bitmap(@"res\" + (i+1) + ".png");
+                Bitmap img = new Bitmap(@"res\" + (i + 1) + ".png");
                 img = new Bitmap(img, new Size(asciiWidth, asciiHeight));
                 arr[i] = new char[(asciiWidth + 1) * asciiHeight];
                 for (int y = 0; y < asciiHeight; y++)
@@ -119,6 +134,41 @@ namespace CMD_Apple
             {
                 Console.SetCursorPosition(0, 0);
                 Console.Out.WriteAsync(frames[i]);
+                if (watch.Elapsed.TotalMilliseconds < (1 / fps) * 1000 * i)
+                {
+                    Thread.Sleep((int)Math.Round(((1 / fps) * 1000 * i) - (int)watch.Elapsed.TotalMilliseconds));
+                }
+            }
+        }
+
+        public static void renderAndPlayAscii(double fps, char[] shader)
+        {
+            WindowsMediaPlayer myplayer = new WindowsMediaPlayer();
+            myplayer.settings.volume = 30;
+            myplayer.URL = @"res\audio.mp3";
+            myplayer.controls.play();
+
+            int frameCount = Directory.GetFiles(@"res\").Length - 1;
+            char[] frame = new char[(asciiWidth + 1) * asciiHeight];
+
+            var watch = Stopwatch.StartNew();
+            for (int i = 0; i < frameCount; i++)
+            {
+                Console.SetCursorPosition(0, 0);
+
+                Bitmap img = new Bitmap(@"res\" + (i + 1) + ".png");
+                img = new Bitmap(img, new Size(asciiWidth, asciiHeight));
+                frame = new char[(asciiWidth + 1) * asciiHeight];
+                for (int y = 0; y < asciiHeight; y++)
+                {
+                    for (int x = 0; x < asciiWidth; x++)
+                    {
+                        frame[(y * (asciiWidth + 1)) + x] = shader[(int)(img.GetPixel(x, y).GetBrightness() * (shader.Length - 1))];
+                    }
+                    frame[(y * (asciiWidth + 1)) + asciiWidth] = '\n';
+                }
+                Console.Out.WriteAsync(frame);
+
                 if (watch.Elapsed.TotalMilliseconds < (1 / fps) * 1000 * i)
                 {
                     Thread.Sleep((int)Math.Round(((1 / fps) * 1000 * i) - (int)watch.Elapsed.TotalMilliseconds));
