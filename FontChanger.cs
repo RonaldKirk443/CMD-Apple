@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CMD_Apple
+namespace GoodApple
 {
     internal class FontChanger
     {

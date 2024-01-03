@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.3.32819.101
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CMD_Apple", "CMD_Apple.csproj", "{79D193CA-A3B1-4F98-8E45-4703615F86D0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Good Apple", "Good Apple.csproj", "{79D193CA-A3B1-4F98-8E45-4703615F86D0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

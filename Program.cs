@@ -8,7 +8,7 @@ using CSCore;
 using CSCore.SoundOut;
 using CSCore.Codecs;
 
-namespace CMD_Apple
+namespace GoodApple
 {
     internal class Program
     {
