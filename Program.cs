@@ -1,12 +1,12 @@
-﻿using FFMpegCore;
+﻿using CSCore;
+using CSCore.Codecs;
+using CSCore.SoundOut;
+using FFMpegCore;
 using FFMpegCore.Enums;
+using IniParser;
+using IniParser.Model;
 using System.Diagnostics;
 using System.Drawing;
-using IniParser.Model;
-using IniParser;
-using CSCore;
-using CSCore.SoundOut;
-using CSCore.Codecs;
 
 namespace GoodApple
 {
@@ -25,8 +25,8 @@ namespace GoodApple
                 '+', '_', '-', '1', '|', '\\', '/', 't', 'f', 'j', 'r', 'x', 'n', 'u',
                 'v', 'c', 'z', 'X', 'Y', 'J', 'C', 'Q', '0', 'O', 'Z', 'm', 'q', 'd',
                 'b', 'h', 'a', 'o', '*', '#', 'M', 'W', '8', 'B', '@', '$'};
-            char[] shaderSmall = {' ', '.', '\'', 'I', '!', '-', '|', 'X', 'Y', '0', 'O', 'Z', 'h', 'o', '#', 'M', 'W', '8', 'B', '@', '$'};
-            char[] shaderMin = {' ', '.', '\'', 'X', 'Y', '0', 'M', '@', '$'};
+            char[] shaderSmall = { ' ', '.', '\'', 'I', '!', '-', '|', 'X', 'Y', '0', 'O', 'Z', 'h', 'o', '#', 'M', 'W', '8', 'B', '@', '$' };
+            char[] shaderMin = { ' ', '.', '\'', 'X', 'Y', '0', 'M', '@', '$' };
 
             FontChanger.setFontSize(16);
 
@@ -36,9 +36,10 @@ namespace GoodApple
             FileIniDataParser settingsParser = new FileIniDataParser();
             IniData settingsData = settingsParser.ReadFile("settings.ini");
 
-            if (!File.Exists(@"ffmpeg\bin\ffmpeg.exe") || !File.Exists(@"ffmpeg\bin\ffplay.exe") || !File.Exists(@"ffmpeg\bin\ffprobe.exe")) {
+            if (!File.Exists(@settingsData["settings"]["ffmpeg-path"] + "\\ffmpeg.exe") || !File.Exists(@settingsData["settings"]["ffmpeg-path"] + "\\ffplay.exe") || !File.Exists(@settingsData["settings"]["ffmpeg-path"] + "\\ffprobe.exe"))
+            {
                 Console.WriteLine("Ffmpeg was not found");
-                Console.WriteLine("Please place the bin folder of ffmpeg  in the ffmpeg folder");
+                Console.WriteLine("Please place the bin folder of ffmpeg in the ffmpeg folder");
                 Console.WriteLine("Press any key to exit");
                 Console.ReadKey();
                 System.Environment.Exit(1);
@@ -55,9 +56,10 @@ namespace GoodApple
                 _ => shaderMin,
             };
 
-            
+
             string vidPath = settingsData["settings"]["video-name"];
-            if (!File.Exists(vidPath)) {
+            if (!File.Exists(vidPath))
+            {
                 Console.WriteLine("Missing video file '" + vidPath + "'");
                 Console.WriteLine("Press any key to exit");
                 Console.ReadKey();
@@ -70,7 +72,7 @@ namespace GoodApple
 
             if (getFps(vidInfo) > int.Parse(settingsData["settings"]["max-realtime-fps"]))
             {
-                Console.WriteLine("Since the video is over 30 fps, the frames will be pre-rendered");
+                Console.WriteLine("Since the video is over " + settingsData["settings"]["max-realtime-fps"] + " fps, the frames will be pre-rendered");
                 Console.WriteLine("Thank you for your patience");
                 Thread.Sleep(5000);
                 vidToFrames(vidPath, vidInfo);
@@ -79,7 +81,8 @@ namespace GoodApple
                 setWindowSize(asciiWidth, asciiHeight);
                 playAscii(arr, getFps(vidInfo), int.Parse(settingsData["settings"]["volume"]));
             }
-            else {
+            else
+            {
                 vidToFrames(vidPath, vidInfo);
                 exportAudio(vidPath);
                 setWindowSize(asciiWidth, asciiHeight);
@@ -92,7 +95,8 @@ namespace GoodApple
             Console.ReadKey();
         }
 
-        public static void generateIni() {
+        public static void generateIni()
+        {
             using (StreamWriter writer = new StreamWriter("settings.ini"))
             {
                 writer.WriteLine("[settings]");
@@ -104,34 +108,34 @@ namespace GoodApple
             }
         }
 
-        public static void exportAudio(string vidPath) {
-            Console.WriteLine("Exporting Audio ...");
-            FFMpeg.ExtractAudio(vidPath, @"res\audio.mp3");
-            Console.Clear();
-        }
-
-        public static void setPlayBackSize(IMediaAnalysis vidInfo) {
+        // Sets the size of the ascii art, not the window
+        public static void setPlayBackSize(IMediaAnalysis vidInfo)
+        {
             if (vidInfo.PrimaryVideoStream == null) throw new Exception("Primary video stream is null");
 
             int width = vidInfo.PrimaryVideoStream.Width;
             int height = vidInfo.PrimaryVideoStream.Height;
-            asciiWidth = (int)MathF.Round(width * 111f / height * (8f/5f));
+            asciiWidth = (int)MathF.Round(width * 111f / height * (8f / 5f));
             asciiHeight = 111;
         }
 
-        public static void setWindowSize(int width, int height) {
+        // Sets the size of the window based on the ascii size
+        public static void setWindowSize(int width, int height)
+        {
             FontChanger.setFontSize(8);
 
             Console.SetWindowSize(width + 8, height + 4);
             Console.SetBufferSize(width + 8, height + 8);
         }
 
-        public static double getFps(IMediaAnalysis vidInfo) {
+        public static double getFps(IMediaAnalysis vidInfo)
+        {
             if (vidInfo.PrimaryVideoStream == null) throw new Exception("Primary video stream is null");
 
             return vidInfo.PrimaryVideoStream.FrameRate;
         }
 
+        // Exports frames from video
         public static void vidToFrames(string vidPath, IMediaAnalysis vidInfo)
         {
             if (vidInfo.PrimaryVideoStream == null) throw new Exception("Primary video stream is null");
@@ -143,7 +147,16 @@ namespace GoodApple
             Console.Clear();
         }
 
-        public static char[][] framesToCharArr(char[] shader) {
+        public static void exportAudio(string vidPath)
+        {
+            Console.WriteLine("Exporting Audio ...");
+            FFMpeg.ExtractAudio(vidPath, @"res\audio.mp3");
+            Console.Clear();
+        }
+
+        // Converts the exported frames into an array of frames in ascii representation
+        public static char[][] framesToCharArr(char[] shader)
+        {
             int frameCount = Directory.GetFiles(@"res\").Length;
             char[][] arr = new char[frameCount][];
             for (int i = 0; i < frameCount; i++)
@@ -166,12 +179,9 @@ namespace GoodApple
             return arr;
         }
 
-        public static void playAscii(char[][] frames, double fps, int volume) {
-
-            //WindowsMediaPlayer myplayer = new WindowsMediaPlayer();
-            //myplayer.settings.volume = volume;
-            //myplayer.URL = @"res\audio.mp3";
-            //myplayer.controls.play();
+        // Plays the array of ascii frames
+        public static void playAscii(char[][] frames, double fps, int volume)
+        {
             IWaveSource musicSource = CodecFactory.Instance.GetCodec(@"res\audio.mp3")
                     .ToSampleSource()
                     .ToMono()
@@ -181,13 +191,12 @@ namespace GoodApple
             music.Volume = volume / 100f;
             music.Play();
 
-
-
             var watch = Stopwatch.StartNew();
             for (int i = 0; i < frames.Length; i++)
             {
                 Console.SetCursorPosition(0, 0);
                 Console.Out.WriteAsync(frames[i]);
+                // Keeps frame-rate stable
                 if (watch.Elapsed.TotalMilliseconds < (1 / fps) * 1000 * i)
                 {
                     Thread.Sleep((int)Math.Round(((1 / fps) * 1000 * i) - (int)watch.Elapsed.TotalMilliseconds));
@@ -195,13 +204,10 @@ namespace GoodApple
             }
         }
 
+        // Converts the exported frames to an ascii image and plays it on the go
+
         public static void renderAndPlayAscii(double fps, char[] shader, int volume)
         {
-            //WindowsMediaPlayer myplayer = new WindowsMediaPlayer();
-            //myplayer.settings.volume = volume;
-            //myplayer.URL = @"res\audio.mp3";
-            //myplayer.controls.play();
-
             IWaveSource musicSource = CodecFactory.Instance.GetCodec(@"res\audio.mp3")
                     .ToSampleSource()
                     .ToMono()
@@ -212,7 +218,7 @@ namespace GoodApple
             music.Play();
 
             int frameCount = Directory.GetFiles(@"res\").Length - 1;
-            char[] frame = new char[(asciiWidth + 1) * asciiHeight];
+            char[] frame;
 
             var watch = Stopwatch.StartNew();
             for (int i = 0; i < frameCount; i++)
@@ -231,7 +237,7 @@ namespace GoodApple
                     frame[(y * (asciiWidth + 1)) + asciiWidth] = '\n';
                 }
                 Console.Out.WriteAsync(frame);
-
+                // Keeps frame-rate stable
                 if (watch.Elapsed.TotalMilliseconds < (1 / fps) * 1000 * i)
                 {
                     Thread.Sleep((int)Math.Round(((1 / fps) * 1000 * i) - (int)watch.Elapsed.TotalMilliseconds));
