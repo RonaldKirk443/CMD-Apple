@@ -2,9 +2,11 @@
 using FFMpegCore.Enums;
 using System.Diagnostics;
 using System.Drawing;
-using WMPLib;
 using IniParser.Model;
 using IniParser;
+using CSCore;
+using CSCore.SoundOut;
+using CSCore.Codecs;
 
 namespace CMD_Apple
 {
@@ -137,10 +139,20 @@ namespace CMD_Apple
 
         public static void playAscii(char[][] frames, double fps, int volume) {
 
-            WindowsMediaPlayer myplayer = new WindowsMediaPlayer();
-            myplayer.settings.volume = volume;
-            myplayer.URL = @"res\audio.mp3";
-            myplayer.controls.play();
+            //WindowsMediaPlayer myplayer = new WindowsMediaPlayer();
+            //myplayer.settings.volume = volume;
+            //myplayer.URL = @"res\audio.mp3";
+            //myplayer.controls.play();
+            IWaveSource musicSource = CodecFactory.Instance.GetCodec(@"res\audio.mp3")
+                    .ToSampleSource()
+                    .ToMono()
+                    .ToWaveSource();
+            ISoundOut music = new DirectSoundOut();
+            music.Initialize(musicSource);
+            music.Volume = volume / 100f;
+            music.Play();
+
+
 
             var watch = Stopwatch.StartNew();
             for (int i = 0; i < frames.Length; i++)
@@ -156,10 +168,19 @@ namespace CMD_Apple
 
         public static void renderAndPlayAscii(double fps, char[] shader, int volume)
         {
-            WindowsMediaPlayer myplayer = new WindowsMediaPlayer();
-            myplayer.settings.volume = volume;
-            myplayer.URL = @"res\audio.mp3";
-            myplayer.controls.play();
+            //WindowsMediaPlayer myplayer = new WindowsMediaPlayer();
+            //myplayer.settings.volume = volume;
+            //myplayer.URL = @"res\audio.mp3";
+            //myplayer.controls.play();
+
+            IWaveSource musicSource = CodecFactory.Instance.GetCodec(@"res\audio.mp3")
+                    .ToSampleSource()
+                    .ToMono()
+                    .ToWaveSource();
+            ISoundOut music = new DirectSoundOut();
+            music.Initialize(musicSource);
+            music.Volume = volume / 100f;
+            music.Play();
 
             int frameCount = Directory.GetFiles(@"res\").Length - 1;
             char[] frame = new char[(asciiWidth + 1) * asciiHeight];
