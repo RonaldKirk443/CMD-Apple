@@ -21,17 +21,28 @@ namespace GoodApple
                 'j', 'r', 'x', 'n', 'u', 'v', 'c', 'z', 'X', 'Y', 'U', 'J', 'C', 'L', 'Q', '0', 'O',
                 'Z', 'm', 'w', 'q', 'p', 'd', 'b', 'k', 'h', 'a', 'o', '*', '#', 'M', 'W', '&', '8',
                 '%', 'B', '@', '$'};
-
             char[] shaderMid = {' ', '.', '\'', '`', '^', '"', ',', ':', ';', 'I', 'l', '!',
                 '+', '_', '-', '1', '|', '\\', '/', 't', 'f', 'j', 'r', 'x', 'n', 'u',
                 'v', 'c', 'z', 'X', 'Y', 'J', 'C', 'Q', '0', 'O', 'Z', 'm', 'q', 'd',
                 'b', 'h', 'a', 'o', '*', '#', 'M', 'W', '8', 'B', '@', '$'};
-
             char[] shaderSmall = {' ', '.', '\'', 'I', '!', '-', '|', 'X', 'Y', '0', 'O', 'Z', 'h', 'o', '#', 'M', 'W', '8', 'B', '@', '$'};
-
             char[] shaderMin = {' ', '.', '\'', 'X', 'Y', '0', 'M', '@', '$'};
+
+            FontChanger.setFontSize(16);
+
+            if (!File.Exists("settings.ini")) generateIni();
+            if (!Directory.Exists("ffmpeg")) Directory.CreateDirectory("ffmpeg");
+
             FileIniDataParser settingsParser = new FileIniDataParser();
             IniData settingsData = settingsParser.ReadFile("settings.ini");
+
+            if (!File.Exists(@"ffmpeg\bin\ffmpeg.exe") || !File.Exists(@"ffmpeg\bin\ffplay.exe") || !File.Exists(@"ffmpeg\bin\ffprobe.exe")) {
+                Console.WriteLine("Ffmpeg was not found");
+                Console.WriteLine("Please place the bin folder of ffmpeg  in the ffmpeg folder");
+                Console.WriteLine("Press any key to exit");
+                Console.ReadKey();
+                System.Environment.Exit(1);
+            }
 
             GlobalFFOptions.Configure(options => options.BinaryFolder = @settingsData["settings"]["ffmpeg-path"]);
 
@@ -44,8 +55,14 @@ namespace GoodApple
                 _ => shaderMin,
             };
 
-            FontChanger.setFontSize(16);
+            
             string vidPath = settingsData["settings"]["video-name"];
+            if (!File.Exists(vidPath)) {
+                Console.WriteLine("Missing video file '" + vidPath + "'");
+                Console.WriteLine("Press any key to exit");
+                Console.ReadKey();
+                System.Environment.Exit(1);
+            }
 
             IMediaAnalysis vidInfo = FFProbe.Analyse(vidPath);
 
@@ -73,6 +90,18 @@ namespace GoodApple
             Console.Clear();
             Console.WriteLine("Press any key to exit");
             Console.ReadKey();
+        }
+
+        public static void generateIni() {
+            using (StreamWriter writer = new StreamWriter("settings.ini"))
+            {
+                writer.WriteLine("[settings]");
+                writer.WriteLine("shader=1");
+                writer.WriteLine("video-name=input.mp4");
+                writer.WriteLine("max-realtime-fps=30");
+                writer.WriteLine("volume=25");
+                writer.WriteLine("ffmpeg-path=ffmpeg\\bin");
+            }
         }
 
         public static void exportAudio(string vidPath) {
