@@ -3,6 +3,8 @@ using FFMpegCore.Enums;
 using System.Diagnostics;
 using System.Drawing;
 using WMPLib;
+using IniParser.Model;
+using IniParser;
 
 namespace CMD_Apple
 {
@@ -23,35 +25,46 @@ namespace CMD_Apple
                 'v', 'c', 'z', 'X', 'Y', 'J', 'C', 'Q', '0', 'O', 'Z', 'm', 'q', 'd',
                 'b', 'h', 'a', 'o', '*', '#', 'M', 'W', '8', 'B', '@', '$'};
 
-            GlobalFFOptions.Configure(options => options.BinaryFolder = @"ffmpeg\bin");
-
             char[] shaderSmall = {' ', '.', '\'', 'I', '!', '-', '|', 'X', 'Y', '0', 'O', 'Z', 'h', 'o', '#', 'M', 'W', '8', 'B', '@', '$'};
 
             char[] shaderMin = {' ', '.', '\'', 'X', 'Y', '0', 'M', '@', '$'};
+            FileIniDataParser settingsParser = new FileIniDataParser();
+            IniData settingsData = settingsParser.ReadFile("settings.ini");
+
+            GlobalFFOptions.Configure(options => options.BinaryFolder = @settingsData["settings"]["ffmpeg-path"]);
+
+            char[] shader = int.Parse(settingsData["settings"]["shader"]) switch
+            {
+                1 => shaderMin,
+                2 => shaderSmall,
+                3 => shaderMid,
+                4 => shaderMax,
+                _ => shaderMin,
+            };
 
             FontChanger.setFontSize(16);
-            string vidPath = "input.mp4";
+            string vidPath = settingsData["settings"]["video-name"];
 
             IMediaAnalysis vidInfo = FFProbe.Analyse(vidPath);
 
             setPlayBackSize(vidInfo);
 
-            if (getFps(vidInfo) > 30)
+            if (getFps(vidInfo) > int.Parse(settingsData["settings"]["max-realtime-fps"]))
             {
                 Console.WriteLine("Since the video is over 30 fps, the frames will be pre-rendered");
                 Console.WriteLine("Thank you for your patience");
                 Thread.Sleep(5000);
                 vidToFrames(vidPath, vidInfo);
-                char[][] arr = framesToCharArr(shaderMin);
+                char[][] arr = framesToCharArr(shader);
                 exportAudio(vidPath);
                 setWindowSize(asciiWidth, asciiHeight);
-                playAscii(arr, getFps(vidInfo));
+                playAscii(arr, getFps(vidInfo), int.Parse(settingsData["settings"]["volume"]));
             }
             else {
                 vidToFrames(vidPath, vidInfo);
                 exportAudio(vidPath);
                 setWindowSize(asciiWidth, asciiHeight);
-                renderAndPlayAscii(getFps(vidInfo), shaderMin);
+                renderAndPlayAscii(getFps(vidInfo), shader, int.Parse(settingsData["settings"]["volume"]));
             }
 
             FontChanger.setFontSize(16);
@@ -122,10 +135,10 @@ namespace CMD_Apple
             return arr;
         }
 
-        public static void playAscii(char[][] frames, double fps) {
+        public static void playAscii(char[][] frames, double fps, int volume) {
 
             WindowsMediaPlayer myplayer = new WindowsMediaPlayer();
-            myplayer.settings.volume = 30;
+            myplayer.settings.volume = volume;
             myplayer.URL = @"res\audio.mp3";
             myplayer.controls.play();
 
@@ -141,10 +154,10 @@ namespace CMD_Apple
             }
         }
 
-        public static void renderAndPlayAscii(double fps, char[] shader)
+        public static void renderAndPlayAscii(double fps, char[] shader, int volume)
         {
             WindowsMediaPlayer myplayer = new WindowsMediaPlayer();
-            myplayer.settings.volume = 30;
+            myplayer.settings.volume = volume;
             myplayer.URL = @"res\audio.mp3";
             myplayer.controls.play();
 
