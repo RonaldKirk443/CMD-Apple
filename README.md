@@ -1,6 +1,6 @@
 # Good Apple
 
-A simple program that can play short videos in a command prompt window. Originally created to play "[Bad Apple](https://youtu.be/FtutLA63Cp8)" but can really play anything you give it. Uses dotnet 6.0, [ffmpeg](https://ffmpeg.org/), [ffmpegcore](https://github.com/rosenbjerg/FFMpegCore), and [cscore](https://github.com/filoe/cscore).
+A simple program that can play short videos in a command prompt window. Originally created to play "[Bad Apple](https://youtu.be/FtutLA63Cp8)" but can really play anything you give it. Uses dotnet 6.0, [ffmpeg](https://ffmpeg.org/), [ffmpegcore](https://github.com/rosenbjerg/FFMpegCore), and [cscore](https://github.com/filoe/cscore). <br><b>Note, does not work in terminal, only works in the real command prompt</b>
 
 ## How to run
 1) Download and extract the latest release from the [releases](https://github.com/RonaldKirk443/good-apple/releases) tab
@@ -17,3 +17,7 @@ video-name  | Name of the video file the program looks for in the root directory
 max-realtime-fps  |  Videos with fps higher than this value will be pre-rendered, thus taking longer, to ensure smooth playback. <br> Lower this value if playback is slow or lagging.
 volume  |  The volume of the video (0-100).
 ffmpeg-path  |  The path to the bin folder of ffmpeg
+
+## Screenshots
+![Screenshot 2](https://imgur.com/a/SgTZOBY)
+![Screenshot 1](https://imgur.com/a/rWaBSXv)
