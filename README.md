@@ -19,5 +19,5 @@ volume  |  The volume of the video (0-100).
 ffmpeg-path  |  The path to the bin folder of ffmpeg
 
 ## Screenshots
-![Screenshot 2](https://imgur.com/a/SgTZOBY)
-![Screenshot 1](https://imgur.com/a/rWaBSXv)
+![Screenshot 1](https://i.imgur.com/5nYVpRT.jpg)
+![Screenshot 2](https://i.imgur.com/9OVPiWi.jpg)
