@@ -18,6 +18,9 @@ max-realtime-fps  |  Videos with fps higher than this value will be pre-rendered
 volume  |  The volume of the video (0-100).
 ffmpeg-path  |  The path to the bin folder of ffmpeg
 
+## Video Showcase
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/oGb05dZKznc/0.jpg)](https://www.youtube.com/watch?v=oGb05dZKznc)
+
 ## Screenshots
 ![Screenshot 1](https://i.imgur.com/5nYVpRT.jpg)
 ![Screenshot 2](https://i.imgur.com/9OVPiWi.jpg)
